@@ -3,117 +3,58 @@
     <header class="game-header">
       <h1>TimeZero</h1>
       <div class="user-info">
+        <button @click="showSettings = true" class="settings-btn" title="Настройки">⚙️</button>
         <span>{{ authStore.user?.username || 'Игрок' }}</span>
         <button @click="handleLogout" class="logout-btn">Выйти</button>
       </div>
     </header>
 
     <div class="game-container">
-      <!-- Боковая панель персонажа -->
-      <aside class="character-panel">
-        <h2>Персонажи</h2>
-        <div v-if="characterStore.characters.length === 0" class="no-character">
-          <p>У вас нет персонажей</p>
-          <button @click="showCreateCharacter = true">Создать персонажа</button>
-        </div>
-        <div v-else>
-          <div class="character-list">
-            <div
-              v-for="char in characterStore.characters"
-              :key="char.id"
-              :class="['character-item', { active: character && character.id === char.id }]"
-              @click="selectCharacter(char)"
-            >
-              <div class="char-name">{{ char.name }}</div>
-              <div class="char-level">Ур. {{ char.level }}</div>
-            </div>
-          </div>
-          <button v-if="characterStore.characters.length < 3" @click="showCreateCharacter = true" class="create-btn">
-            + Создать персонажа
-          </button>
+      <div class="top-panels">
+        <!-- Панель персонажа слева -->
+        <CharacterPanel
+          :characters="characterStore.characters"
+          :current-character="character"
+          @create-character="showCreateCharacter = true"
+          @select-character="selectCharacter"
+        />
 
-          <div v-if="character" class="character-info">
-            <h3>{{ character.name }}</h3>
-            <p>Пол: {{ getGenderLabel(character.gender) }}</p>
-            <p>Профессия: {{ getProfessionLabel(character.profession) }}</p>
-            <p>Уровень: {{ character.level }}</p>
-            <div class="stats">
-            <div class="stat">
-              <span>HP:</span>
-              <div class="bar">
-                <div class="bar-fill" :style="{ width: (character.health / character.max_health * 100) + '%' }"></div>
-              </div>
-              <span>{{ character.health }}/{{ character.max_health }}</span>
-            </div>
-            <div class="stat-grid">
-              <div>Сила: {{ character.strength }}</div>
-              <div>Ловкость: {{ character.dexterity }}</div>
-              <div>Интеллект: {{ character.intelligence }}</div>
-              <div>Выносливость: {{ character.endurance }}</div>
-            </div>
-            </div>
-            <div class="resources">
-              <p>Опыт: {{ character.experience }}</p>
-              <p>Золото: {{ character.gold }}</p>
-            </div>
-          </div>
-        </div>
-      </aside>
+        <!-- Центральная область с картой -->
+        <GameCanvas
+          ref="gameCanvasRef"
+          :current-location="currentLocation"
+          :monsters="monsters"
+          :other-players="otherPlayers"
+          :player-x="playerX"
+          :player-y="playerY"
+          :character="character"
+          :selected-monster="selectedMonster"
+          @monster-click="onMonsterClick"
+          @canvas-click="handleCanvasClick"
+        />
 
-      <!-- Основная игровая область -->
-      <main class="game-main">
-        <div class="game-canvas">
-          <canvas ref="gameCanvas" width="800" height="600" @click="handleCanvasClick"></canvas>
-          <div class="location-info">
-            <p v-if="currentLocation">📍 {{ currentLocation.name }}</p>
-            <p v-if="currentLocation && currentLocation.radiation_level > 0" class="radiation-warning">
-              ☢️ Радиация: {{ currentLocation.radiation_level }}
-            </p>
-            <p v-if="character" class="coordinates">Координаты: ({{ playerX }}, {{ playerY }})</p>
-          </div>
-        </div>
+        <!-- Панель локаций справа -->
+        <LocationsPanel
+          :locations="locations"
+          :current-location="currentLocation"
+          @select-location="selectLocation"
+        />
 
         <!-- Боевая панель -->
-        <div v-if="selectedMonster" class="combat-panel">
-          <h3>Бой: {{ selectedMonster.name }}</h3>
-          <div class="monster-stats">
-            <div class="stat-bar">
-              <span>HP: {{ selectedMonster.health }}/{{ selectedMonster.max_health }}</span>
-              <div class="bar">
-                <div class="bar-fill monster-hp" :style="{ width: (selectedMonster.health / selectedMonster.max_health * 100) + '%' }"></div>
-              </div>
-            </div>
-            <p>Уровень: {{ selectedMonster.level }}</p>
-          </div>
-          <div class="combat-actions">
-            <button @click="attackMonster" class="attack-btn">⚔️ Атаковать</button>
-            <button @click="selectedMonster = null" class="flee-btn">🏃 Отступить</button>
-          </div>
-          <div class="combat-log">
-            <div v-for="(log, index) in combatLog" :key="index" class="log-entry" :class="log.type">
-              {{ log.message }}
-            </div>
-          </div>
-        </div>
+        <CombatPanel
+          v-if="selectedMonster"
+          :monster="selectedMonster"
+          :combat-log="combatLog"
+          @attack="attackMonster"
+          @flee="selectedMonster = null"
+        />
+      </div>
 
-        <!-- Чат -->
-        <div class="chat-panel" :class="{ 'compact': selectedMonster }">
-          <div class="chat-messages" ref="chatMessages">
-            <div v-for="(msg, index) in messages" :key="index" class="chat-message">
-              <span class="chat-user">{{ msg.user }}:</span>
-              <span class="chat-text">{{ msg.text }}</span>
-            </div>
-          </div>
-          <div class="chat-input">
-            <input
-              v-model="chatMessage"
-              @keyup.enter="sendMessage"
-              placeholder="Введите сообщение..."
-            />
-            <button @click="sendMessage">Отправить</button>
-          </div>
-        </div>
-      </main>
+      <!-- Чат внизу под всеми панелями -->
+      <ChatPanel
+        :messages="messages"
+        @send-message="sendMessage"
+      />
     </div>
 
     <!-- Модальное окно создания персонажа -->
@@ -160,6 +101,51 @@
         </form>
       </div>
     </div>
+
+    <!-- Модальное окно настроек -->
+    <div v-if="showSettings" class="modal">
+      <div class="modal-content settings-modal">
+        <h2>Настройки</h2>
+        <div class="settings-section">
+          <h3>Горячие клавиши</h3>
+          <div class="hotkey-list">
+            <div class="hotkey-item">
+              <span class="hotkey-label">Информация о персонаже:</span>
+              <span class="hotkey-key">C</span>
+            </div>
+            <div class="hotkey-item">
+              <span class="hotkey-label">Инвентарь:</span>
+              <span class="hotkey-key">I</span>
+            </div>
+            <div class="hotkey-item">
+              <span class="hotkey-label">Закрыть модальные окна:</span>
+              <span class="hotkey-key">Escape</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" @click="showSettings = false">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно персонажа -->
+    <CharacterModal
+      :show="showCharacterModal"
+      :character="character"
+      @close="showCharacterModal = false"
+    />
+
+    <!-- Модальное окно инвентаря -->
+    <InventoryModal
+      :show="showInventory"
+      :inventory-items="inventoryItems"
+      @close="showInventory = false"
+      @equip-item="equipItem"
+      @unequip-item="unequipItem"
+      @delete-item="deleteItem"
+      @move-item="moveItemToSlot"
+    />
   </div>
 </template>
 
@@ -169,6 +155,13 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useCharacterStore } from '../stores/character'
 import websocketService from '../services/websocket'
+import CharacterPanel from '../components/CharacterPanel.vue'
+import CharacterModal from '../components/CharacterModal.vue'
+import GameCanvas from '../components/GameCanvas.vue'
+import LocationsPanel from '../components/LocationsPanel.vue'
+import ChatPanel from '../components/ChatPanel.vue'
+import CombatPanel from '../components/CombatPanel.vue'
+import InventoryModal from '../components/InventoryModal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -184,12 +177,11 @@ const error = ref('')
 
 const character = computed(() => characterStore.currentCharacter)
 
-const chatMessage = ref('')
 const messages = ref([
   { user: 'Система', text: 'Добро пожаловать в TimeZero!' }
 ])
 
-const gameCanvas = ref(null)
+const gameCanvasRef = ref(null)
 const playerX = ref(400)
 const playerY = ref(300)
 const otherPlayers = ref([])
@@ -198,6 +190,12 @@ const selectedMonster = ref(null)
 const combatLog = ref([])
 const locations = ref([])
 const currentLocation = ref(null)
+
+// Модальные окна
+const showSettings = ref(false)
+const showCharacterModal = ref(false)
+const showInventory = ref(false)
+const inventoryItems = ref([])
 
 const handleLogout = () => {
   websocketService.disconnect()
@@ -210,36 +208,9 @@ const selectCharacter = async (char) => {
   playerX.value = char.location_id ? 400 : 400
   playerY.value = char.location_id ? 300 : 300
   await loadMonsters()
-  drawCanvas()
-}
-
-const getGenderLabel = (gender) => {
-  const labels = {
-    'male': 'Мужчина',
-    'female': 'Женщина',
-    'other': 'Другое'
+  if (gameCanvasRef.value) {
+    gameCanvasRef.value.drawCanvas()
   }
-  return labels[gender] || gender
-}
-
-const getProfessionLabel = (profession) => {
-  const labels = {
-    'corsair': 'Корсар',
-    'mercenary': 'Наёмник',
-    'stalker': 'Сталкер',
-    'journalist': 'Журналист',
-    'trader': 'Торговец',
-    'psionic': 'Псионик',
-    'engineer': 'Инженер',
-    'medic': 'Медик',
-    'scout': 'Разведчик',
-    'scientist': 'Учёный',
-    'hunter': 'Охотник',
-    'guard': 'Страж',
-    'mechanic': 'Механик',
-    'smuggler': 'Контрабандист'
-  }
-  return labels[profession] || profession
 }
 
 const createCharacter = async () => {
@@ -265,13 +236,129 @@ const createCharacter = async () => {
   }
 }
 
-const sendMessage = () => {
-  if (chatMessage.value.trim()) {
+const sendMessage = (message) => {
+  if (message.trim()) {
     // Отправка через WebSocket
-    websocketService.sendChat(chatMessage.value)
+    websocketService.sendChat(message)
+  }
+}
 
-    // Очищаем поле ввода
-    chatMessage.value = ''
+// Функции инвентаря
+const openInventory = async () => {
+  await loadInventory()
+  showInventory.value = true
+}
+
+const loadInventory = async () => {
+  if (!character.value) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`http://localhost:8000/inventory/characters/${character.value.id}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
+    if (response.ok) {
+      inventoryItems.value = await response.json()
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки инвентаря:', error)
+  }
+}
+
+const equipItem = async (item) => {
+  if (!character.value) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`http://localhost:8000/inventory/characters/${character.value.id}/equip`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        slot_id: item.id,
+        equip: true
+      })
+    })
+
+    if (response.ok) {
+      await loadInventory()
+      await characterStore.fetchCharacters()
+    }
+  } catch (error) {
+    console.error('Ошибка экипировки:', error)
+  }
+}
+
+const unequipItem = async (item) => {
+  if (!character.value) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`http://localhost:8000/inventory/characters/${character.value.id}/equip`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        slot_id: item.id,
+        equip: false
+      })
+    })
+
+    if (response.ok) {
+      await loadInventory()
+      await characterStore.fetchCharacters()
+    }
+  } catch (error) {
+    console.error('Ошибка снятия экипировки:', error)
+  }
+}
+
+const moveItemToSlot = async (item, newPosition) => {
+  if (!character.value) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`http://localhost:8000/inventory/characters/${character.value.id}/move`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        slot_id: item.id,
+        new_position: newPosition
+      })
+    })
+
+    if (response.ok) {
+      await loadInventory()
+    }
+  } catch (error) {
+    console.error('Ошибка перемещения предмета:', error)
+  }
+}
+
+const deleteItem = async (item) => {
+  if (!character.value || !confirm('Вы уверены, что хотите выбросить этот предмет?')) return
+
+  try {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`http://localhost:8000/inventory/characters/${character.value.id}/slots/${item.id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+
+    if (response.ok) {
+      await loadInventory()
+      await characterStore.fetchCharacters()
+    }
+  } catch (error) {
+    console.error('Ошибка удаления предмета:', error)
   }
 }
 
@@ -289,17 +376,26 @@ const loadLocations = async () => {
       locations.value = data
 
       // Определяем текущую локацию по позиции персонажа
-      if (character.value) {
-        currentLocation.value = locations.value.find(loc =>
-          Math.abs(loc.x - playerX.value) < 100 && Math.abs(loc.y - playerY.value) < 100
-        ) || locations.value[0]
+      if (character.value && character.value.location_id) {
+        currentLocation.value = locations.value.find(loc => loc.id === character.value.location_id) || locations.value[0]
+      } else if (locations.value.length > 0) {
+        currentLocation.value = locations.value[0]
       }
 
-      drawCanvas()
+      if (gameCanvasRef.value) {
+        gameCanvasRef.value.drawCanvas()
+      }
     }
   } catch (error) {
     console.error('Ошибка загрузки локаций:', error)
   }
+}
+
+const selectLocation = async (location) => {
+  if (!character.value) return
+
+  currentLocation.value = location
+  await teleportToLocation(location)
 }
 
 const loadMonsters = async () => {
@@ -316,7 +412,9 @@ const loadMonsters = async () => {
     if (response.ok) {
       const data = await response.json()
       monsters.value = data.monsters
-      drawCanvas()
+      if (gameCanvasRef.value) {
+        gameCanvasRef.value.drawCanvas()
+      }
     }
   } catch (error) {
     console.error('Ошибка загрузки монстров:', error)
@@ -353,7 +451,9 @@ const teleportToLocation = async (location) => {
 
       // Обновляем монстров для новой локации
       await loadMonsters()
-      drawCanvas()
+      if (gameCanvasRef.value) {
+        gameCanvasRef.value.drawCanvas()
+      }
 
       // Отправляем информацию о перемещении через WebSocket
       websocketService.sendMove(character.value.id, location.x, location.y)
@@ -449,7 +549,9 @@ const attackMonster = async () => {
         selectedMonster.value = null
 
         // Перерисовываем карту
-        drawCanvas()
+        if (gameCanvasRef.value) {
+          gameCanvasRef.value.drawCanvas()
+        }
       }
 
       // Ограничиваем лог до 10 записей
@@ -467,114 +569,15 @@ const attackMonster = async () => {
   }
 }
 
-const drawCanvas = () => {
-  const canvas = gameCanvas.value
-  if (!canvas) return
-
-  const ctx = canvas.getContext('2d')
-
-  // Очистка canvas
-  ctx.fillStyle = '#2a2a2a'
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-  // Сетка
-  ctx.strokeStyle = '#333'
-  ctx.lineWidth = 1
-  for (let x = 0; x < canvas.width; x += 50) {
-    ctx.beginPath()
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, canvas.height)
-    ctx.stroke()
-  }
-  for (let y = 0; y < canvas.height; y += 50) {
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(canvas.width, y)
-    ctx.stroke()
-  }
-
-  // Отрисовка локаций (порталы)
-  locations.value.forEach(location => {
-    const isCurrentLocation = currentLocation.value && currentLocation.value.id === location.id
-
-    // Круг локации
-    ctx.beginPath()
-    ctx.arc(location.x, location.y, 40, 0, Math.PI * 2)
-
-    // Цвет в зависимости от типа локации
-    if (location.is_safe_zone) {
-      ctx.fillStyle = isCurrentLocation ? '#4a9a4a' : '#3a7a3a'
-    } else {
-      ctx.fillStyle = isCurrentLocation ? '#aa6644' : '#884422'
-    }
-    ctx.fill()
-
-    // Рамка для текущей локации
-    if (isCurrentLocation) {
-      ctx.strokeStyle = '#ffff00'
-      ctx.lineWidth = 3
-      ctx.stroke()
-    }
-
-    // Название локации
-    ctx.fillStyle = '#fff'
-    ctx.font = 'bold 12px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(location.name, location.x, location.y - 50)
-
-    // Уровень радиации
-    if (location.radiation_level > 0) {
-      ctx.fillStyle = '#ff6666'
-      ctx.font = '10px Arial'
-      ctx.fillText(`☢️ ${location.radiation_level}`, location.x, location.y + 55)
-    }
-  })
-
-  // Отрисовка монстров
-  monsters.value.forEach(monster => {
-    ctx.fillStyle = '#aa4444'
-    ctx.fillRect(monster.x - 25, monster.y - 25, 50, 50)
-
-    // Рамка для выбранного монстра
-    if (selectedMonster.value && selectedMonster.value.id === monster.id) {
-      ctx.strokeStyle = '#ff0000'
-      ctx.lineWidth = 3
-      ctx.strokeRect(monster.x - 27, monster.y - 27, 54, 54)
-    }
-
-    ctx.fillStyle = '#fff'
-    ctx.font = '10px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(monster.name, monster.x, monster.y - 30)
-    ctx.fillText(`Lv.${monster.level}`, monster.x, monster.y - 18)
-  })
-
-  // Отрисовка других игроков
-  otherPlayers.value.forEach(player => {
-    ctx.fillStyle = '#9a4a4a'
-    ctx.fillRect(player.x - 25, player.y - 25, 50, 50)
-    ctx.fillStyle = '#fff'
-    ctx.font = '12px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(player.name || 'Игрок', player.x, player.y - 30)
-  })
-
-  // Отрисовка текущего игрока
-  ctx.fillStyle = '#4a9a4a'
-  ctx.fillRect(playerX.value - 25, playerY.value - 25, 50, 50)
-
-  if (character.value) {
-    ctx.fillStyle = '#fff'
-    ctx.font = '12px Arial'
-    ctx.textAlign = 'center'
-    ctx.fillText(character.value.name, playerX.value, playerY.value - 30)
-  }
+const onMonsterClick = (monster) => {
+  selectedMonster.value = monster
+  combatLog.value = []
 }
 
 const handleCanvasClick = async (event) => {
   if (!character.value) return
 
-  const canvas = gameCanvas.value
+  const canvas = gameCanvasRef.value.$refs.canvas
   const rect = canvas.getBoundingClientRect()
   const x = event.clientX - rect.left
   const y = event.clientY - rect.top
@@ -585,7 +588,7 @@ const handleCanvasClick = async (event) => {
     const dy = y - location.y
     const distance = Math.sqrt(dx * dx + dy * dy)
 
-    if (distance < 40) { // Радиус клика по локации
+    if (distance < 40) {
       await teleportToLocation(location)
       return
     }
@@ -598,50 +601,55 @@ const handleCanvasClick = async (event) => {
     const dy = y - monster.y
     const distance = Math.sqrt(dx * dx + dy * dy)
 
-    if (distance < 30) { // Радиус клика по монстру
+    if (distance < 30) {
       clickedMonster = monster
       break
     }
   }
 
   if (clickedMonster) {
-    // Выбираем монстра для боя
-    selectedMonster.value = clickedMonster
-    combatLog.value = [] // Очищаем лог боя
-    drawCanvas()
+    onMonsterClick(clickedMonster)
+  }
+}
+
+// Обработчик клавиатуры для горячих клавиш
+const handleKeyPress = async (event) => {
+  // Игнорируем нажатия в полях ввода
+  if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
     return
   }
 
-  // Обновление позиции локально
-  playerX.value = x
-  playerY.value = y
-
-  // Отправка на сервер
-  try {
-    const token = localStorage.getItem('token')
-    const response = await fetch(`http://localhost:8000/movement/characters/${character.value.id}/move`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ x: Math.floor(x), y: Math.floor(y) })
-    })
-
-    if (response.ok) {
-      // Отправить движение через WebSocket другим игрокам
-      websocketService.sendMove(character.value.id, Math.floor(x), Math.floor(y))
+  // C - открыть информацию о персонаже
+  if (event.key === 'c' || event.key === 'C' || event.key === 'с' || event.key === 'С') {
+    if (character.value) {
+      showCharacterModal.value = !showCharacterModal.value
     }
-  } catch (error) {
-    console.error('Ошибка перемещения:', error)
   }
 
-  drawCanvas()
+  // I - открыть инвентарь
+  if (event.key === 'i' || event.key === 'I' || event.key === 'ш' || event.key === 'Ш') {
+    if (character.value) {
+      if (!showInventory.value) {
+        await loadInventory()
+      }
+      showInventory.value = !showInventory.value
+    }
+  }
+
+  // Escape - закрыть все модальные окна
+  if (event.key === 'Escape') {
+    showSettings.value = false
+    showCharacterModal.value = false
+    showInventory.value = false
+  }
 }
 
 onMounted(async () => {
   // Загрузка персонажей пользователя
   await characterStore.fetchCharacters()
+
+  // Добавляем обработчик горячих клавиш
+  window.addEventListener('keydown', handleKeyPress)
 
   // Подключение к WebSocket
   const token = localStorage.getItem('token')
@@ -672,7 +680,9 @@ onMounted(async () => {
       })
       // Удалить игрока из списка других игроков
       otherPlayers.value = otherPlayers.value.filter(p => p.user_id !== data.user_id)
-      drawCanvas()
+      if (gameCanvasRef.value) {
+        gameCanvasRef.value.drawCanvas()
+      }
     })
 
     // Обработка движения других игроков
@@ -691,12 +701,11 @@ onMounted(async () => {
           name: `Игрок ${data.user_id}`
         })
       }
-      drawCanvas()
+      if (gameCanvasRef.value) {
+        gameCanvasRef.value.drawCanvas()
+      }
     })
   }
-
-  // Инициализация Canvas
-  drawCanvas()
 
   // Загрузка локаций
   await loadLocations()
@@ -708,6 +717,9 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  // Удаляем обработчик горячих клавиш
+  window.removeEventListener('keydown', handleKeyPress)
+
   websocketService.disconnect()
 })
 </script>
@@ -741,6 +753,22 @@ onUnmounted(() => {
   gap: 15px;
 }
 
+.settings-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.settings-btn:hover {
+  background-color: #333;
+  color: #4a9a4a;
+}
+
 .logout-btn {
   background-color: #555;
   padding: 8px 16px;
@@ -752,203 +780,15 @@ onUnmounted(() => {
 
 .game-container {
   display: flex;
+  flex-direction: column;
   flex: 1;
   overflow: hidden;
 }
 
-.character-panel {
-  width: 300px;
-  background-color: #252525;
-  border-right: 1px solid #333;
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.character-panel h2 {
-  color: #4a9a4a;
-  margin-bottom: 20px;
-}
-
-.no-character {
-  text-align: center;
-}
-
-.character-list {
-  margin-bottom: 15px;
-}
-
-.character-item {
-  background-color: #1a1a1a;
-  border: 2px solid #333;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.character-item:hover {
-  border-color: #4a9a4a;
-  transform: translateX(5px);
-}
-
-.character-item.active {
-  border-color: #4a9a4a;
-  background-color: #2a3a2a;
-}
-
-.char-name {
-  color: #fff;
-  font-weight: bold;
-  font-size: 16px;
-  margin-bottom: 4px;
-}
-
-.char-level {
-  color: #888;
-  font-size: 14px;
-}
-
-.create-btn {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  background-color: #3a7a3a;
-  border: none;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.2s;
-}
-
-.create-btn:hover {
-  background-color: #4a9a4a;
-}
-
-.character-info {
-  border-top: 1px solid #333;
-  padding-top: 15px;
-}
-
-.character-info h3 {
-  color: #4a9a4a;
-  margin-bottom: 10px;
-}
-
-.stats {
-  margin: 20px 0;
-}
-
-.stat {
-  margin-bottom: 10px;
-}
-
-.bar {
-  background-color: #333;
-  height: 20px;
-  border-radius: 4px;
+.top-panels {
+  display: flex;
+  flex: 1;
   overflow: hidden;
-  margin: 5px 0;
-}
-
-.bar-fill {
-  background-color: #4a9a4a;
-  height: 100%;
-  transition: width 0.3s;
-}
-
-.stat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 15px;
-  font-size: 14px;
-}
-
-.resources {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #333;
-}
-
-.game-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-}
-
-.game-canvas {
-  position: relative;
-  margin-bottom: 20px;
-}
-
-canvas {
-  border: 2px solid #333;
-  border-radius: 4px;
-  display: block;
-}
-
-.location-info {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #888;
-}
-
-.location-info p {
-  margin: 5px 0;
-}
-
-.radiation-warning {
-  color: #ff6666 !important;
-  font-weight: bold;
-}
-
-.coordinates {
-  color: #aaa;
-  font-size: 12px;
-}
-
-.chat-panel {
-  background-color: #252525;
-  border: 1px solid #333;
-  border-radius: 4px;
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-.chat-message {
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.chat-user {
-  color: #4a9a4a;
-  font-weight: bold;
-  margin-right: 5px;
-}
-
-.chat-text {
-  color: #ccc;
-}
-
-.chat-input {
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  border-top: 1px solid #333;
-}
-
-.chat-input input {
-  flex: 1;
 }
 
 .modal {
@@ -997,121 +837,51 @@ canvas {
   flex: 1;
 }
 
-/* Combat panel styles */
-.combat-panel {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: #2a2a2a;
-  border: 2px solid #aa4444;
-  border-radius: 12px;
-  padding: 25px;
-  min-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
-  z-index: 1000;
+.settings-modal {
+  max-width: 500px;
 }
 
-.combat-panel h3 {
-  color: #ff6666;
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-section h3 {
+  color: #4a9a4a;
   margin-bottom: 15px;
-  text-align: center;
-  font-size: 1.5em;
+  font-size: 18px;
 }
 
-.monster-stats {
-  margin-bottom: 20px;
-}
-
-.stat-bar {
-  background-color: #1a1a1a;
-  border-radius: 6px;
-  padding: 10px 15px;
-  margin-bottom: 8px;
-}
-
-.stat-bar span {
-  color: #cccccc;
-  font-size: 1.1em;
-}
-
-.monster-info {
-  color: #aaaaaa;
-  margin-bottom: 5px;
-}
-
-.combat-actions {
+.hotkey-list {
   display: flex;
+  flex-direction: column;
   gap: 12px;
-  margin-bottom: 20px;
 }
 
-.combat-actions button {
-  flex: 1;
-  padding: 12px 20px;
-  font-size: 1.1em;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: bold;
-}
-
-.combat-actions button:first-child {
-  background-color: #aa4444;
-  color: white;
-}
-
-.combat-actions button:first-child:hover {
-  background-color: #cc5555;
-  transform: scale(1.05);
-}
-
-.combat-actions button:last-child {
-  background-color: #555555;
-  color: white;
-}
-
-.combat-actions button:last-child:hover {
-  background-color: #666666;
-}
-
-.combat-log {
-  max-height: 200px;
-  overflow-y: auto;
+.hotkey-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
   background-color: #1a1a1a;
   border-radius: 6px;
-  padding: 12px;
+  border: 1px solid #333;
 }
 
-.combat-log div {
-  padding: 6px 0;
-  border-bottom: 1px solid #333;
-  font-size: 0.95em;
+.hotkey-label {
+  color: #ccc;
+  font-size: 14px;
 }
 
-.combat-log div:last-child {
-  border-bottom: none;
-}
-
-.combat-log .damage {
-  color: #ff6666;
-}
-
-.combat-log .success {
-  color: #66ff66;
-}
-
-.combat-log .info {
-  color: #6666ff;
-}
-
-.combat-log .warning {
-  color: #ffaa44;
-}
-
-.combat-log .death {
-  color: #ff4444;
+.hotkey-key {
+  background-color: #333;
+  color: #4a9a4a;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
   font-weight: bold;
+  border: 1px solid #444;
+  min-width: 60px;
+  text-align: center;
 }
 </style>

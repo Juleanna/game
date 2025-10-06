@@ -23,6 +23,16 @@
           />
         </div>
 
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              v-model="rememberMe"
+              type="checkbox"
+            />
+            <span>Запомнить меня</span>
+          </label>
+        </div>
+
         <div v-if="error" class="error">{{ error }}</div>
 
         <button type="submit" :disabled="loading">
@@ -47,8 +57,18 @@ const authStore = useAuthStore()
 
 const username = ref('')
 const password = ref('')
+const rememberMe = ref(false)
 const error = ref('')
 const loading = ref(false)
+
+// Загрузка сохраненных данных при монтировании
+const savedUsername = localStorage.getItem('rememberedUsername')
+const savedPassword = localStorage.getItem('rememberedPassword')
+if (savedUsername && savedPassword) {
+  username.value = savedUsername
+  password.value = savedPassword
+  rememberMe.value = true
+}
 
 const handleLogin = async () => {
   error.value = ''
@@ -59,6 +79,15 @@ const handleLogin = async () => {
   loading.value = false
 
   if (result.success) {
+    // Сохранение или удаление учетных данных
+    if (rememberMe.value) {
+      localStorage.setItem('rememberedUsername', username.value)
+      localStorage.setItem('rememberedPassword', password.value)
+    } else {
+      localStorage.removeItem('rememberedUsername')
+      localStorage.removeItem('rememberedPassword')
+    }
+
     router.push('/game')
   } else {
     error.value = result.error
@@ -101,8 +130,34 @@ label {
   font-size: 14px;
 }
 
-input {
+input[type="text"],
+input[type="password"] {
   width: 100%;
+}
+
+.checkbox-group {
+  margin-bottom: 15px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  accent-color: #4a9a4a;
+}
+
+.checkbox-label span {
+  user-select: none;
 }
 
 button {

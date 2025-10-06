@@ -19,5 +19,9 @@ class Location(Base):
     is_safe_zone = Column(Boolean, default=False)  # Безопасная зона (нет PvP)
     is_city = Column(Boolean, default=False)  # Город/поселение
 
+    # Tilemap - карта локации в формате JSON
+    # Массив 20x15 тайлов, каждый тайл - тип местности
+    tilemap = Column(Text, default='[]')  # JSON массив
+
     # Связи
     characters = relationship("Character", back_populates="location")

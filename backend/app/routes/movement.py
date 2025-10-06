@@ -16,6 +16,12 @@ class MoveRequest(BaseModel):
     y: int
 
 
+class MoveRequestWithCharacter(BaseModel):
+    character_id: int
+    x: int
+    y: int
+
+
 @router.post("/characters/{character_id}/move")
 async def move_character(
     character_id: int,
@@ -72,6 +78,54 @@ async def move_character(
         "character_id": character.id,
         "x": character.location.x if character.location else move_data.x,
         "y": character.location.y if character.location else move_data.y,
+    }
+
+
+@router.post("/move")
+async def move_character_simple(
+    move_data: MoveRequestWithCharacter,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Универсальный endpoint для перемещения персонажа (используется для телепортации)"""
+
+    # Проверка существования персонажа
+    character = db.query(Character).filter(Character.id == move_data.character_id).first()
+    if not character:
+        raise HTTPException(status_code=404, detail="Персонаж не найден")
+
+    # Проверка прав доступа
+    if character.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="Нет прав для управления этим персонажем"
+        )
+
+    # Находим локацию на указанных координатах
+    from app.models.location import Location
+
+    target_location = db.query(Location).filter(
+        Location.x == move_data.x,
+        Location.y == move_data.y
+    ).first()
+
+    if not target_location:
+        raise HTTPException(
+            status_code=404,
+            detail="Локация не найдена. Используйте только существующие локации из списка."
+        )
+
+    # Устанавливаем персонажа в найденную локацию
+    character.location_id = target_location.id
+
+    db.commit()
+    db.refresh(character)
+
+    return {
+        "success": True,
+        "character_id": character.id,
+        "x": character.location.x if character.location else move_data.x,
+        "y": character.location.y if character.location else move_data.y,
+        "location_id": character.location_id
     }
 
 

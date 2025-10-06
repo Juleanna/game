@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.database import engine, Base
-from app.routes import auth, characters, websocket, movement, combat
+from app.routes import auth, characters, websocket, movement, combat, locations, inventory
 
 # Создание таблиц в БД
 Base.metadata.create_all(bind=engine)
@@ -23,6 +23,8 @@ app.include_router(characters.router)
 app.include_router(websocket.router)
 app.include_router(movement.router)
 app.include_router(combat.router)
+app.include_router(locations.router)
+app.include_router(inventory.router)
 
 
 @app.get("/")

@@ -39,7 +39,7 @@ class Character(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     name = Column(String, unique=True, index=True, nullable=False)
     profession = Column(Enum(ProfessionType), nullable=False)
-    gender = Column(Enum(GenderType), nullable=False, default=GenderType.MALE)
+    gender = Column(Enum(GenderType), nullable=False, default=GenderType.male)
     level = Column(Integer, default=1)
 
     # Характеристики
