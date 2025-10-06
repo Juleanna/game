@@ -726,24 +726,28 @@ onUnmounted(() => {
 
 <style scoped>
 .game-view {
-  min-height: 100vh;
+  height: 100vh;
+  width: 100vw;
   background-color: #1a1a1a;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .game-header {
   background-color: #252525;
-  padding: 15px 30px;
+  padding: 10px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #333;
+  flex-shrink: 0;
+  height: 50px;
 }
 
 .game-header h1 {
   color: #4a9a4a;
-  font-size: 24px;
+  font-size: 20px;
   margin: 0;
 }
 
@@ -783,12 +787,14 @@ onUnmounted(() => {
   flex-direction: column;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .top-panels {
   display: flex;
   flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
 .modal {

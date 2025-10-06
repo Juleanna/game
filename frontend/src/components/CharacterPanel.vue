@@ -36,16 +36,19 @@ defineEmits(['create-character', 'select-character'])
 
 <style scoped>
 .character-panel {
-  width: 300px;
+  width: 240px;
+  min-width: 200px;
   background-color: #252525;
   border-right: 1px solid #333;
-  padding: 20px;
+  padding: 15px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .character-panel h2 {
   color: #4a9a4a;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  font-size: 18px;
 }
 
 .no-character {
@@ -59,9 +62,9 @@ defineEmits(['create-character', 'select-character'])
 .character-item {
   background-color: #1a1a1a;
   border: 2px solid #333;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 10px;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
   cursor: pointer;
   transition: all 0.2s;
 }
