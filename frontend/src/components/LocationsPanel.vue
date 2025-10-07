@@ -34,17 +34,19 @@ defineEmits(['select-location'])
 
 <style scoped>
 .locations-panel {
-  width: 280px;
+  width: 240px;
+  min-width: 200px;
   background-color: #252525;
   border-left: 1px solid #333;
-  padding: 20px;
+  padding: 15px;
   overflow-y: auto;
+  flex-shrink: 0;
 }
 
 .locations-panel h3 {
   color: #4a9a4a;
-  margin: 0 0 15px 0;
-  font-size: 18px;
+  margin: 0 0 12px 0;
+  font-size: 16px;
 }
 
 .locations-list {
@@ -56,11 +58,11 @@ defineEmits(['select-location'])
 .location-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   background-color: #1a1a1a;
   border: 2px solid #333;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
 }

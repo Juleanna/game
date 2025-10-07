@@ -128,18 +128,24 @@ const getProfessionLabel = (profession) => {
   background-color: #1a1a1a;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 550px;
+  max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-height: 768px) {
+  .character-container {
+    max-height: 90vh;
+  }
 }
 
 .character-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 30px;
+  padding: 15px 20px;
   background-color: #252525;
   border-bottom: 2px solid #333;
 }
@@ -171,9 +177,15 @@ const getProfessionLabel = (profession) => {
 }
 
 .character-content {
-  padding: 30px;
+  padding: 20px;
   overflow-y: auto;
   flex: 1;
+}
+
+@media (max-height: 768px) {
+  .character-content {
+    padding: 15px;
+  }
 }
 
 .character-main h3 {

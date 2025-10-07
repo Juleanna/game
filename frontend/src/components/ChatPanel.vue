@@ -40,10 +40,18 @@ const sendMessage = () => {
 .chat-panel-bottom {
   background-color: #252525;
   border-top: 1px solid #333;
-  height: 240px;
+  height: 180px;
+  min-height: 150px;
   display: flex;
   flex-direction: column;
-  padding: 15px 20px;
+  padding: 12px 15px;
+  flex-shrink: 0;
+}
+
+@media (max-height: 768px) {
+  .chat-panel-bottom {
+    height: 150px;
+  }
 }
 
 .chat-messages {

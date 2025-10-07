@@ -165,12 +165,18 @@ const onDrop = (event, target, isEquipmentSlot) => {
 .inventory-container {
   background-color: #1a1a1a;
   border-radius: 12px;
-  width: 70%;
-  max-width: 700px;
-  max-height: 70vh;
+  width: 80%;
+  max-width: 650px;
+  max-height: 85vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-height: 768px) {
+  .inventory-container {
+    max-height: 90vh;
+  }
 }
 
 .inventory-header {
